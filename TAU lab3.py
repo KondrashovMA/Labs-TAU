@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import control.matlab as ml
 from sympy import *
 import math
+import qualityInd
 import scipy.integrate as integrate
 def trapezoidal(f, a, b, n): # честно взято из интернета
 	"""
@@ -35,11 +36,18 @@ k_nm = 3
 
 #W_sum = W_g*W_m*W_u
 
-w_g = ml.tf([0, 1], [T_g, 1]) #1
+#w_g = ml.tf([0, 1], [T_g, 1]) #1
 #print(w_g)
-w_m = ml.tf([k_nm], [T_nm, 1]) #2
+#w_m = ml.tf([k_nm], [T_nm, 1]) #2
 #print(w_m)
-w_u = ml.tf([k_u], [T_u, 1]) #3
+#w_u = ml.tf([k_u], [T_u, 1]) #3
+
+w_g = ml.tf([1.], [8, 1]) #1
+#w_m = ml.tf([0, 3], [0, 7.]) #2
+
+w_m = ml.tf([0, 3], [0, 7.]) #2
+
+w_u = ml.tf([21.], [7., 1.]) #3
 #print(w_u)
 #_________________w_reg = ml.tg()
 
@@ -77,13 +85,30 @@ while True:
     # ПИД W pid = Kp + Ki/p + Kd*p
     w_pid=ml.tf([k_p], [1]) + ml.tf([0, k_i], [1, 0]) + ml.tf([k_d, 0], [0,1])
 
+    w_pid=ml.tf([k_d,k_p,k_i],[1.,1.])
     # ПИ Wpi = Kp + Ki/p
     #w_pi = ml.tf([k_p], [1]) + ml.tf([0, k_i], [1, 0])
     print("передаточная регулятора", w_pid) #тут менять
 
 
     w_sum = w_pid*w_sumKnown  #тут менять
-    w = ml.feedback(w_sum, 1) # передаточная функция
+    w = ml.feedback(1,w_sum) # передаточная функция
+    w = w_sum/(1+w_sum)
+
+    w_zam = w_sumKnown/(1+w_sumKnown)
+
+
+    y,x = ml.step(w_zam)
+    plt.plot(x,y, label="переходная системы")
+
+
+    y,x=ml.step(w)
+    plt.plot(x,y, label="переходная системы c регулированием")
+    plt.grid(True)
+
+    plt.legend()
+    plt.show()
+
     print("Передаточная функция системы без регулятора: ", w_sumKnown)
     print("Передаточная функция системы: ", w)
     print("Передаточная функция разомкнутной системы: ", w_sum)
@@ -101,9 +126,7 @@ while True:
     #Переходная 
     y,x=ml.step(w)
     plt.close()
-    #print("y ",y)
-    #print("len y", len(y))
-    #print("последний элемент = ",y[-1]," предпоследний элемент = ",y[-2])
+
     lastElem = y[-1]
     preLastElem = y[-2]
     yyTop=[]
@@ -149,7 +172,9 @@ while True:
     print("Значения полюсов передаточной функции:")
     minim=[]
     for ans in first_elem:
+        print("анс ту____________________________________________т")
         print(ans)
+        print(re(ans))
         min_ans=re(first_elem[0])
         minim.append(first_elem[0])
         for i in range(1, len(first_elem)):
